@@ -49,34 +49,31 @@ class _CounterContentsPageState extends State<CounterContentsPage> {
             fontSize: 20,
           ),
         ),
-        LastDateWidget(counter.lastDate),
+        LastDateWidget(counter),
         FlatButton(
           child: const Text('増やす'),
           onPressed: () => setState(
-            counter.incrementCount,
+            () => counter
+              ..incrementCount()
+              ..save(),
           ),
         ),
       ],
     );
   }
-
-  @override
-  void dispose() {
-    counter.save();
-    super.dispose();
-  }
 }
 
 class LastDateWidget extends StatefulWidget {
-  LastDateWidget(this.last);
-  final DateTime last;
+  const LastDateWidget(this.counter);
+  final Counter counter;
+
   @override
-  State<StatefulWidget> createState() => _LastDateWidgetState(last);
+  State<StatefulWidget> createState() => _LastDateWidgetState(counter);
 }
 
 class _LastDateWidgetState extends State<LastDateWidget> {
-  _LastDateWidgetState(this.last);
-  final DateTime last;
+  _LastDateWidgetState(this.counter);
+  final Counter counter;
   DateTime now;
 
   @override
@@ -91,7 +88,7 @@ class _LastDateWidgetState extends State<LastDateWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final dif = last.difference(now).abs();
+    final dif = counter.lastDate.difference(now).abs();
     final formatted =
         '${dif.inDays}日${dif.inHours.remainder(24)}時${dif.inMinutes.remainder(60)}分${dif.inSeconds.remainder(60)}秒間';
     return Text(
