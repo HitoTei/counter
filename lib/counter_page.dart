@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'counter.dart';
 
 class CounterPage extends StatelessWidget {
+  const CounterPage();
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
@@ -33,9 +33,8 @@ class _CounterContentsPageState extends State<CounterContentsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 30,
-      runSpacing: 20,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
           '${counter.count}回',
@@ -43,13 +42,16 @@ class _CounterContentsPageState extends State<CounterContentsPage> {
             fontSize: 20,
           ),
         ),
+        SizedBox(height: 10),
         Text(
           '最後：${dateTimeToString(counter.lastDate)}',
           style: const TextStyle(
             fontSize: 20,
           ),
         ),
+        SizedBox(height: 10),
         LastDateWidget(counter),
+        SizedBox(height: 10),
         FlatButton(
           child: const Text('増やす'),
           onPressed: () => setState(
@@ -58,6 +60,16 @@ class _CounterContentsPageState extends State<CounterContentsPage> {
               ..save(),
           ),
         ),
+        SizedBox(height: 10),
+        FlatButton(
+          child: const Text('リセット'),
+          onPressed: () => setState(() {
+            counter
+              ..count = 0
+              ..lastDate = DateTime.now()
+              ..save();
+          }),
+        )
       ],
     );
   }
@@ -78,12 +90,19 @@ class _LastDateWidgetState extends State<LastDateWidget> {
 
   @override
   void initState() {
+    super.initState();
+
     now = DateTime.now();
     Timer.periodic(
-      Duration(seconds: 1),
-      (_) => setState(() => now = DateTime.now()),
+      const Duration(seconds: 1),
+      (timer) {
+        if (!timer.isActive) return;
+        if (mounted)
+          setState(() => now = DateTime.now());
+        else
+          timer.cancel();
+      },
     );
-    super.initState();
   }
 
   @override
@@ -94,47 +113,6 @@ class _LastDateWidgetState extends State<LastDateWidget> {
     return Text(
       'dif: $formatted',
     );
-  }
-}
-
-class Counter {
-  int count;
-  DateTime lastDate;
-
-  static Future<Counter> createCounter() async {
-    final counter = Counter();
-    await counter.load();
-    return counter;
-  }
-
-  static Future<File> getFilePath() async {
-    const _fileName = 'counter.txt';
-    final directory = await getApplicationDocumentsDirectory();
-    return File(directory.path + '/' + _fileName);
-  }
-
-  void incrementCount() {
-    count++;
-    lastDate = DateTime.now();
-  }
-
-  Future<void> load() async {
-    final file = await getFilePath();
-    try {
-      final str = await file.readAsString();
-
-      final a = str.split(',');
-      this.count = int.parse(a[0]);
-      this.lastDate = DateTime.parse(a[1]);
-    } catch (e) {
-      this.count = 0;
-      this.lastDate = DateTime.now();
-    }
-  }
-
-  Future<void> save() async {
-    final file = await getFilePath();
-    file.writeAsString('$count,$lastDate');
   }
 }
 
