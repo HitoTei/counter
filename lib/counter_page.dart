@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:share/share.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'counter.dart';
 
 class CounterPage extends StatelessWidget {
@@ -30,6 +32,23 @@ class CounterContentsPage extends StatefulWidget {
 class _CounterContentsPageState extends State<CounterContentsPage> {
   _CounterContentsPageState(this.counter);
   Counter counter;
+  final controller = TextEditingController();
+  final pref = SharedPreferences.getInstance();
+  @override
+  void initState() {
+    pref.then((val) {
+      controller.text = val.getString('text');
+    });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    pref.then((val) {
+      val.setString('text', controller.text);
+    });
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,11 +73,15 @@ class _CounterContentsPageState extends State<CounterContentsPage> {
         SizedBox(height: 10),
         FlatButton(
           child: const Text('増やす'),
-          onPressed: () => setState(
-            () => counter
-              ..incrementCount()
-              ..save(),
-          ),
+          onPressed: () {
+            Share.share(
+                '${controller.text}(${counter.count + 1}回目)\n${durationToString(DateTime.now().difference(counter.lastDate))}ぶり');
+            setState(
+              () => counter
+                ..incrementCount()
+                ..save(),
+            );
+          },
         ),
         SizedBox(height: 10),
         FlatButton(
@@ -69,7 +92,10 @@ class _CounterContentsPageState extends State<CounterContentsPage> {
               ..lastDate = DateTime.now()
               ..save();
           }),
-        )
+        ),
+        TextField(
+          controller: controller,
+        ),
       ],
     );
   }
@@ -108,12 +134,15 @@ class _LastDateWidgetState extends State<LastDateWidget> {
   @override
   Widget build(BuildContext context) {
     final dif = counter.lastDate.difference(now).abs();
-    final formatted =
-        '${dif.inDays}日${dif.inHours.remainder(24)}時${dif.inMinutes.remainder(60)}分${dif.inSeconds.remainder(60)}秒間';
+    final formatted = '${durationToString(dif)}';
     return Text(
       'dif: $formatted',
     );
   }
+}
+
+String durationToString(Duration dif) {
+  return '${dif.inDays}日${dif.inHours.remainder(24)}時${dif.inMinutes.remainder(60)}分${dif.inSeconds.remainder(60)}秒';
 }
 
 String dateTimeToString(DateTime date) {
